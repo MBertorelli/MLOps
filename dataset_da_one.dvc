@@ -1,0 +1,5 @@
+outs:
+- md5: c8fd1345b160923c8caffeb8bcd49f99.dir
+  size: 63476059
+  nfiles: 4747
+  path: dataset_da_one
