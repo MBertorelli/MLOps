@@ -10,6 +10,9 @@ python_version = "3.8"
 
 [packages]
 albumentations = "*"
+dagster = "*"
+dagit = "*"
+apache-airflow = "==2.1.0"
 
 [packages.dvc]
 extras = [ "gdrive",]
