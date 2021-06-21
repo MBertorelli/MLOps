@@ -38,13 +38,17 @@ from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
 
-logger = logging.getLogger(__name__)
+import mlflow
+
+mlflow.log_param("batch_size", 16)
+mlflow.log_param("epochs", 100)
+mlflow.log_param("dataset", 'v1')
 
 experiment = Experiment(
     api_key="1zQ4Tj5Fqk3OSpZnuRAJmj09b",
     project_name="yolov5-test-mlops",
     workspace="mbertorelli",
-    log_code = True,
+    log_code=True,
 )
 
 hyper_params = {
@@ -52,9 +56,13 @@ hyper_params = {
     "epochs": 100,
     "dataset": 'v1',
 }
+
 experiment.log_parameters(hyper_params)
 
 def train(hyp, opt, device, tb_writer=None):
+    logger = logging.getLogger(__name__)
+
+    
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank, single_cls = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, \
@@ -392,6 +400,7 @@ def train(hyp, opt, device, tb_writer=None):
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                 experiment.log_metric(tag, x)
+                mlflow.log_metric(tag, x)
                 if tb_writer:
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
                 if wandb_logger.wandb:
@@ -430,7 +439,7 @@ def train(hyp, opt, device, tb_writer=None):
     if rank in [-1, 0]:
         logger.info(f'{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.\n')
         if plots:
-            plot_results(save_dir=save_dir)  # save as results.png
+            experiment.log_image(plot_results(save_dir=save_dir))  # save as results.png
             if wandb_logger.wandb:
                 files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
                 wandb_logger.log({"Results": [wandb_logger.wandb.Image(str(save_dir / f), caption=f) for f in files

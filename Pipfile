@@ -13,6 +13,7 @@ albumentations = "*"
 dagster = "*"
 dagit = "*"
 apache-airflow = "==2.1.0"
+mlflow = "*"
 
 [packages.dvc]
 extras = [ "gdrive",]
